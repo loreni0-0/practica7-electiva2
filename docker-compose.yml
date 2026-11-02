@@ -1,0 +1,43 @@
+services:
+  # d) Servicio de base de datos MySQL
+  db:
+    image: mysql:8.0
+    container_name: practica7_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: rootpassword
+      MYSQL_DATABASE: practica7_db
+      MYSQL_USER: usuario_practica
+      MYSQL_PASSWORD: password123
+    ports:
+      # Se mapea 3307 en el host para evitar conflicto con servicios MySQL locales en el puerto 3306
+      - "3307:3306"
+    volumes:
+      - mysql_practica7_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-prootpassword"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+      start_period: 15s
+
+  # c) Servicio de servidor de aplicación web (Python / Flask)
+  web:
+    build:
+      context: ./src
+    container_name: practica7_web
+    restart: always
+    ports:
+      - "5000:5000"
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_NAME: practica7_db
+      DB_USER: usuario_practica
+      DB_PASSWORD: password123
+    depends_on:
+      db:
+        condition: service_healthy
+
+volumes:
+  mysql_practica7_data:
